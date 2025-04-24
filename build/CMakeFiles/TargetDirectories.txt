@@ -1,0 +1,3 @@
+C:/Users/gabri/Documents/pegaVisao_local_repository/Pega-o-Visao/build/CMakeFiles/main.dir
+C:/Users/gabri/Documents/pegaVisao_local_repository/Pega-o-Visao/build/CMakeFiles/edit_cache.dir
+C:/Users/gabri/Documents/pegaVisao_local_repository/Pega-o-Visao/build/CMakeFiles/rebuild_cache.dir
