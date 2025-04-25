@@ -53,10 +53,10 @@ RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:\Users\gabri\Documents\pegaVisao_local_repository\Pega-o-Visao
+CMAKE_SOURCE_DIR = C:\Users\João\Documents\pegaVisao_local_repository\Pega-o-Visao
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:\Users\gabri\Documents\pegaVisao_local_repository\Pega-o-Visao\build
+CMAKE_BINARY_DIR = C:\Users\João\Documents\pegaVisao_local_repository\Pega-o-Visao\build
 
 #=============================================================================
 # Directory level rules for the build root directory
