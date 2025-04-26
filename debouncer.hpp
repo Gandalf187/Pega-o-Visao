@@ -1,3 +1,7 @@
+#pragma once
+#ifndef DEBOUNCER_HPP
+#define DEBOUNCER_HPP
+
 #include <opencv2/opencv.hpp>
 #include <chrono>
 
@@ -29,3 +33,5 @@ class Debouncer {
             return false;
         }
     };
+
+#endif
