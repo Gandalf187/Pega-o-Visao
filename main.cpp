@@ -1,5 +1,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include "menu.hpp"
+#include "debouncer.hpp"
 
 using namespace cv;
 using namespace std;
@@ -77,6 +79,11 @@ int main(){
     Desafio desafioAtual = gerarDesafio();
     int menu = 0; // 0 - Tela Inicial; 1 - JOGAR; 2 - Tutorial; 3 - Pontuações; 4 - Créditos; 5 - Sair
 
+    
+    // Crie debouncers para cada área de interação
+    Debouncer debouncerMenu(500); // 500ms para o menu principal
+    Debouncer debouncerTop(300), debouncerBottom(300), debouncerLeft(300), debouncerRight(300); // 300ms para as áreas do jogo
+
     // Processo de captura do vídeo/imagem
     Mat frame, hsv, mask;
     while (true) {
@@ -139,34 +146,32 @@ int main(){
             Mat color_rect(roi.size(), roi.type(), Scalar(255, 200, 0));
             
             if(menu == 0){
-
-                // Detectar colisões
-                if((jogar & box).area() > 0){
+                if(debouncerMenu.debounce(detectedJogar, currentTime)){
                     menu = 1;
                     cout << "Menu Jogar\n";
                 }
-                else if((tutorial & box).area() > 0){
+                else if(debouncerMenu.debounce(detectedTutorial, currentTime)){
                     menu = 2;
                     cout << "Menu Tutorial\n";
                 }
-                else if((pontuacoes & box).area() > 0){
+                else if(debouncerMenu.debounce(detectedPontuacoes, currentTime)){
                     menu = 3;
                     cout << "Menu Pontuações\n";
                 }
-                else if((creditos & box).area() > 0){
+                else if(debouncerMenu.debounce(detectedCreditos, currentTime)){
                     menu = 4;
                     cout << "Menu Créditos\n";
                 }
-                else if((sair & box).area() > 0){
+                else if(debouncerMenu.debounce(detectedSair, currentTime)){
                     cout << "Saindo...\n";
                     cap.release();
                     destroyAllWindows();
                     return 0;
                 }
-            }
+            }    
             else if(menu == 1){
                 if(!colisao){
-                    if ((top & box).area() > 0){
+                    if (debouncerTop.debounce((top & box).area() > 0, currentTime)){
                         if((desafioAtual.direcao == "Cima" && desafioAtual.cor == Scalar(0, 255, 0))
                         || (desafioAtual.direcao == "Baixo" && desafioAtual.cor == Scalar(0, 0, 255)))
                         {
@@ -177,7 +182,7 @@ int main(){
                             pontuacao--;
                         }
                     }
-                    else if((bottom & box).area() > 0){
+                    else if (debouncerBottom.debounce((bottom & box).area() > 0, currentTime)){
                         if((desafioAtual.direcao == "Baixo" && desafioAtual.cor == Scalar(0, 255, 0))
                         || (desafioAtual.direcao == "Cima" && desafioAtual.cor == Scalar(0, 0, 255)))
                         {
@@ -188,7 +193,7 @@ int main(){
                             pontuacao--;
                         }
                     }
-                    else if((left & box).area() > 0){
+                    else if (debouncerLeft.debounce((left & box).area() > 0, currentTime)){
                         if((desafioAtual.direcao == "Esquerda" && desafioAtual.cor == Scalar(0, 255, 0))
                         || (desafioAtual.direcao == "Direita" && desafioAtual.cor == Scalar(0, 0, 255)))
                         {
@@ -199,7 +204,7 @@ int main(){
                             pontuacao--;
                         }
                     }
-                    else if((right & box).area() > 0){
+                    else if (debouncerRight.debounce((right & box).area() > 0, currentTime)){
                         if((desafioAtual.direcao == "Direita" && desafioAtual.cor == Scalar(0, 255, 0))
                         || (desafioAtual.direcao == "Esquerda" && desafioAtual.cor == Scalar(0, 0, 255)))
                         {
