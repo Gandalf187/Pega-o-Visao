@@ -363,7 +363,9 @@ CMakeFiles/main.dir/main.cpp.obj: C:/Users/gabri/Documents/pegaVisao_local_repos
   C:/mingw64/x86_64-w64-mingw32/include/time.h \
   C:/mingw64/x86_64-w64-mingw32/include/vadefs.h \
   C:/mingw64/x86_64-w64-mingw32/include/wchar.h \
-  C:/mingw64/x86_64-w64-mingw32/include/wctype.h
+  C:/mingw64/x86_64-w64-mingw32/include/wctype.h \
+  C:/Users/gabri/Documents/pegaVisao_local_repository/Pega-o-Visao/debouncer.hpp \
+  C:/Users/gabri/Documents/pegaVisao_local_repository/Pega-o-Visao/menu.hpp
 
 
 C:/OpenCV/opencv/sources/modules/core/include/opencv2/core/utils/logtag.hpp:
@@ -1028,6 +1030,8 @@ C:/mingw64/lib/gcc/x86_64-w64-mingw32/14.2.0/include/mm_malloc.h:
 
 C:/mingw64/lib/gcc/x86_64-w64-mingw32/14.2.0/include/mmintrin.h:
 
+C:/Users/gabri/Documents/pegaVisao_local_repository/Pega-o-Visao/debouncer.hpp:
+
 C:/mingw64/lib/gcc/x86_64-w64-mingw32/14.2.0/include/stdarg.h:
 
 C:/mingw64/lib/gcc/x86_64-w64-mingw32/14.2.0/include/stddef.h:
@@ -1091,3 +1095,5 @@ C:/mingw64/x86_64-w64-mingw32/include/vadefs.h:
 C:/mingw64/x86_64-w64-mingw32/include/wchar.h:
 
 C:/mingw64/x86_64-w64-mingw32/include/wctype.h:
+
+C:/Users/gabri/Documents/pegaVisao_local_repository/Pega-o-Visao/menu.hpp:

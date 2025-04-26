@@ -177,7 +177,7 @@ int main() {
                         colisao = true;
                     }
                     else {
-                        pontuacao--;
+                        if(pontuacao > 0) {pontuacao--;}
                     }
                 }
                 else if (debouncerBottom.debounce(detectedBottom)) {
@@ -188,7 +188,7 @@ int main() {
                         colisao = true;
                     }
                     else {
-                        pontuacao--;
+                        if(pontuacao > 0) {pontuacao--;}
                     }
                 }
                 else if (debouncerLeft.debounce(detectedLeft)) {
@@ -199,7 +199,7 @@ int main() {
                         colisao = true;
                     }
                     else {
-                        pontuacao--;
+                        if(pontuacao > 0) {pontuacao--;}
                     }
                 }
                 else if (debouncerRight.debounce(detectedRight)) {
@@ -210,12 +210,12 @@ int main() {
                         colisao = true;
                     }
                     else {
-                        pontuacao--;
+                        if(pontuacao > 0) {pontuacao--;}
                     }
                 }
 
                 if (shouldProcess && desafioAtual.cor == Scalar(0, 0, 0)) {
-                    pontuacao--;
+                    if(pontuacao > 0) {pontuacao--;}
                     colisao = true;
                 }
             }

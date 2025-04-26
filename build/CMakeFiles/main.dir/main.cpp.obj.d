@@ -363,4 +363,6 @@ CMakeFiles/main.dir/main.cpp.obj: \
  C:/OpenCV/opencv/sources/modules/stitching/include/opencv2/stitching/detail/camera.hpp \
  C:/OpenCV/opencv/sources/modules/video/include/opencv2/video.hpp \
  C:/OpenCV/opencv/sources/modules/video/include/opencv2/video/tracking.hpp \
- C:/OpenCV/opencv/sources/modules/video/include/opencv2/video/background_segm.hpp
+ C:/OpenCV/opencv/sources/modules/video/include/opencv2/video/background_segm.hpp \
+ C:\Users\gabri\Documents\pegaVisao_local_repository\Pega-o-Visao\menu.hpp \
+ C:\Users\gabri\Documents\pegaVisao_local_repository\Pega-o-Visao\debouncer.hpp
