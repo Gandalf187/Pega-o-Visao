@@ -23,6 +23,10 @@ Scalar upper_green(85, 255, 255);
 Scalar lower_yellow(20, 100, 100);
 Scalar upper_yellow(30, 255, 255);
 
+// Laranja
+Scalar lower_orange(10, 100, 100);
+Scalar upper_orange(20, 255, 255);
+
 // Cor de "pele"
 Scalar lower_pele(0, 30, 60);
 Scalar upper_pele(20, 150, 255);
@@ -48,7 +52,8 @@ Desafio gerarDesafio() {
     };
 
     string dir = direcoes[rand() % direcoes.size()];
-    auto cor = cores[rand() % cores.size()];
+    double percent = (double) rand() / RAND_MAX;
+    auto cor = (percent < 0.375) ? cores[0] : (percent < 0.75) ? cores[1] : cores[2];
 
     return Desafio(dir, cor.first, cor.second);
 }
@@ -62,6 +67,14 @@ int main(){
         return -1;
     }
 
+    // Variáveis importantes para o jogo
+    int pontuacao = 0;
+    int dificuldade = 1;
+    int delay = 2000; // tempo entre desafios em ms
+    bool colisao = false;
+    int64 ultimoTempo = getTickCount();
+    int64 intervalo = delay * getTickFrequency() / 1000;
+    Desafio desafioAtual = gerarDesafio();
     int menu = 0; // 0 - Tela Inicial; 1 - JOGAR; 2 - Tutorial; 3 - Pontuações; 4 - Créditos; 5 - Sair
 
     // Processo de captura do vídeo/imagem
@@ -70,13 +83,6 @@ int main(){
         cap >> frame;
         if (frame.empty())
             break;
-
-        // Variáveis importantes para o jogo
-        int pontuacao = 0;
-        int delay = 2000; // tempo entre desafios em ms
-        int menu = 0;     // 0 - Tela Inicial; 1 - JOGAR; 2 - Tutorial; 3 - Pontuações; 4 - Créditos;
-        int64 ultimoTempo = getTickCount();
-        int64 intervalo = delay * getTickFrequency() / 1000;
 
         // Configurações da janela inicial
         flip(frame, frame, 1);
@@ -90,7 +96,7 @@ int main(){
         cvtColor(frame, hsv, COLOR_BGR2HSV);
 
         // Segmenta cores do objeto
-        inRange(hsv, lower_blue, upper_blue, mask);
+        inRange(hsv, lower_yellow, upper_yellow, mask);
         // inRange(hsv, lower_red2, upper_red2, mask); // Para vermelho
         
         // Limpeza com operações morfológicas
@@ -101,12 +107,18 @@ int main(){
         vector<vector<Point>> contours;
         findContours(mask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-        // Área dos botões do menu
+        // Área dos botões do menu principal
         Rect jogar(Point(0, 0), Point(x * 0.2, y * 0.2));
         Rect tutorial(Point(x * 0.2, 0), Point(x * 0.4, y * 0.2));
         Rect pontuacoes(Point(x * 0.4, 0), Point(x * 0.6, y * 0.2));
         Rect creditos(Point(x * 0.6, 0), Point(x * 0.8, y * 0.2));
         Rect sair(Point(x * 0.8, 0), Point(x, y * 0.2));
+
+        // Área dos botões do menu Jogar
+        Rect top(Point(0, 0), Point(x, y * 0.15));
+        Rect bottom(Point(0, y * 0.85), Point(x, y));
+        Rect left(Point(0, y * 0.15), Point(x * 0.10, y * 0.85));
+        Rect right(Point(x * 0.9, y * 0.15), Point(x, y * 0.85));
 
         for (auto& contour : contours) {
             if (contourArea(contour) < 1000)
@@ -126,10 +138,92 @@ int main(){
             Mat roi = frame(box);
             Mat color_rect(roi.size(), roi.type(), Scalar(255, 200, 0));
             
-            if((jogar & box).area() > 0){
-                menu = 1;
-                cout << "Menu Jogar\n";
+            if(menu == 0){
+
+                // Detectar colisões
+                if((jogar & box).area() > 0){
+                    menu = 1;
+                    cout << "Menu Jogar\n";
+                }
+                else if((tutorial & box).area() > 0){
+                    menu = 2;
+                    cout << "Menu Tutorial\n";
+                }
+                else if((pontuacoes & box).area() > 0){
+                    menu = 3;
+                    cout << "Menu Pontuações\n";
+                }
+                else if((creditos & box).area() > 0){
+                    menu = 4;
+                    cout << "Menu Créditos\n";
+                }
+                else if((sair & box).area() > 0){
+                    cout << "Saindo...\n";
+                    cap.release();
+                    destroyAllWindows();
+                    return 0;
+                }
             }
+            else if(menu == 1){
+                if(!colisao){
+                    if ((top & box).area() > 0){
+                        if((desafioAtual.direcao == "Cima" && desafioAtual.cor == Scalar(0, 255, 0))
+                        || (desafioAtual.direcao == "Baixo" && desafioAtual.cor == Scalar(0, 0, 255)))
+                        {
+                            pontuacao++;
+                            colisao = true;
+                        }
+                        else{
+                            pontuacao--;
+                        }
+                    }
+                    else if((bottom & box).area() > 0){
+                        if((desafioAtual.direcao == "Baixo" && desafioAtual.cor == Scalar(0, 255, 0))
+                        || (desafioAtual.direcao == "Cima" && desafioAtual.cor == Scalar(0, 0, 255)))
+                        {
+                            pontuacao++;
+                            colisao = true;
+                        }
+                        else{
+                            pontuacao--;
+                        }
+                    }
+                    else if((left & box).area() > 0){
+                        if((desafioAtual.direcao == "Esquerda" && desafioAtual.cor == Scalar(0, 255, 0))
+                        || (desafioAtual.direcao == "Direita" && desafioAtual.cor == Scalar(0, 0, 255)))
+                        {
+                            pontuacao++;
+                            colisao = true;
+                        }
+                        else{
+                            pontuacao--;
+                        }
+                    }
+                    else if((right & box).area() > 0){
+                        if((desafioAtual.direcao == "Direita" && desafioAtual.cor == Scalar(0, 255, 0))
+                        || (desafioAtual.direcao == "Esquerda" && desafioAtual.cor == Scalar(0, 0, 255)))
+                        {
+                            pontuacao++;
+                            colisao = true;
+                        }
+                        else{
+                            pontuacao--;
+                        }
+                    }
+                    if(((top & box).area() > 0 
+                        ||(bottom & box).area() > 0
+                        ||  (left & box).area() > 0
+                        || (right & box).area() > 0)
+                        && desafioAtual.cor == Scalar(0, 0, 0)){
+                        pontuacao--;
+                        colisao = true;
+                    }
+                }
+                else{
+
+                }
+            }
+            
             // Desenha o contorno principal
             // drawContours(frame, vector<vector<Point>>{contour}, -1, Scalar(255,0,0), 2);
             
@@ -140,8 +234,7 @@ int main(){
             addWeighted(overlay, 0.5, frame, 0.5, 0, frame);
             addWeighted(color_rect, 0.5, roi, 0.5, 0, roi);
         }
-        
-        // Troca de menus
+
         if(menu == 0){
             // Desenhar botões
             rectangle(frame, jogar, Scalar(0, 0, 0), 2);
@@ -150,29 +243,18 @@ int main(){
             rectangle(frame, creditos, Scalar(0, 0, 0), 2);
             rectangle(frame, sair, Scalar(0, 0, 0), 2);
         }
+
         else if(menu == 1){ // JOGAR
-            
             // Desenhar as regiões de contato
-            rectangle(frame, Point(0, 0), Point(x, y * 0.15), Scalar(0, 0, 255), 2); // Top
-            rectangle(frame, Point(0, y * 0.85), Point(x, y), Scalar(0, 255, 255), 2); // Bottom
-            rectangle(frame, Point(0, y * 0.15), Point(x * 0.10, y * 0.85), Scalar(255, 0, 0), 2); // Left
-            rectangle(frame, Point(x * 0.9, y * 0.15), Point(x * 0.9, y * 0.85), Scalar(0, 255, 0), 2); // Right
+            rectangle(frame, top, Scalar(0, 0, 255), 2); // Top
+            rectangle(frame, bottom, Scalar(0, 255, 255), 2); // Bottom
+            rectangle(frame, left, Scalar(255, 0, 0), 2); // Left
+            rectangle(frame, right, Scalar(0, 255, 0), 2); // Right
             
             putText(frame, desafioAtual.direcao, Point(50, 100), FONT_HERSHEY_SIMPLEX, 1, desafioAtual.cor, 4);
-            putText(frame, "Pontuacao: " + to_string(pontuacao), Point(50, 200), FONT_HERSHEY_SIMPLEX, 1, Scalar(255,255,255), 2);
-    
-            // Aqui você faria a detecção da mão e checaria o movimento
-            // Por enquanto, vamos simular que o jogador sempre acerta se pressionar a tecla correta
-    
-            char key = (char)waitKey(30);
-            if (key == 27) break; // Esc pra sair
-    
-            // Simulando resposta do jogador
-            
-            if (key == 'a' && desafioAtual.direcao == "Esquerda" && desafioAtual.cor == Scalar(0,255,0)) {
-                pontuacao++;
-            }
-    
+            putText(frame, "Pontuacao: " + to_string(pontuacao), Point(50, 150), FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
+            putText(frame, "Dificuldade: " + to_string(dificuldade), Point(50, 200), FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
+
             // Troca de desafio após intervalo
             if (getTickCount() - ultimoTempo > intervalo) {
                 desafioAtual = gerarDesafio();
@@ -180,14 +262,18 @@ int main(){
     
                 // Aumenta dificuldade
                 if (pontuacao > 0 && pontuacao % 5 == 0 && delay > 800) {
+                    dificuldade++;
                     delay -= 200;
                     intervalo = delay * getTickFrequency() / 1000;
                 }
+                colisao = false;
             }
         }
         imshow("Deteccao Full Body", frame);
         if (waitKey(10) ==  27 || waitKey(10) == 'q')
             break; // Esc ou Q para sair
     }
+    cap.release();
+    destroyAllWindows();
     return 0;
 }
