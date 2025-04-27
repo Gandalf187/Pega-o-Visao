@@ -1,6 +1,7 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include <chrono>
+#include "mixer.hpp"
 #include "menu.hpp"
 #include "debouncer.hpp"
 
@@ -39,7 +40,7 @@ public:
         direcao(dir), cor(c), corNome(c_nome) {}
 };
 
-Desafio gerarDesafio() {
+Desafio gerarDesafio(Mixer mixer) {
     vector<string> direcoes = {"Esquerda", "Direita", "Cima", "Baixo"};
     vector<pair<Scalar, string>> cores = {
         {Scalar(0, 255, 0), "Verde"},
@@ -49,13 +50,42 @@ Desafio gerarDesafio() {
 
     string dir = direcoes[rand() % direcoes.size()];
     double percent = (double)rand() / RAND_MAX;
-    auto cor = (percent < 0.375) ? cores[0] : 
-              (percent < 0.75) ? cores[1] : cores[2];
+    auto cor = (percent < 0.7) ? cores[0] : 
+              (percent < 0.9) ? cores[1] : cores[2];
+
+    if(dir == "Esquerda"){
+        mixer.loadSoundEffect("./musicas/direcoes/esquerda.wav");
+        mixer.playSoundEffect();
+    }
+    else if(dir == "Direita"){
+        mixer.loadSoundEffect("./musicas/direcoes/direita.wav");
+        mixer.playSoundEffect();
+    }
+    else if(dir == "Cima"){
+        mixer.loadSoundEffect("./musicas/direcoes/cima.wav");
+        mixer.playSoundEffect();
+    }
+    else if(dir == "Baixo"){
+        mixer.loadSoundEffect("./musicas/direcoes/baixo.wav");
+        mixer.playSoundEffect();
+    }
 
     return Desafio(dir, cor.first, cor.second);
 }
 
 int main() {
+    try{
+        Mixer mixer;
+    }
+    catch(int e){
+        cout << "Programa encerrando...";
+        return -1;
+    }
+
+    mixer.loadMusic("./musicas/subway_surfers.mp3");
+    mixer.playMusic();
+    mixer.setVolume(1, 20); // Volume = 20%
+
     VideoCapture cap(0);
     if (!cap.isOpened()) {
         cout << "Erro ao abrir webcam\n";
@@ -69,7 +99,7 @@ int main() {
     bool colisao = false;
     int64 ultimoTempo = getTickCount();
     int64 intervalo = delay * getTickFrequency() / 1000;
-    Desafio desafioAtual = gerarDesafio();
+    Desafio desafioAtual = gerarDesafio(mixer);
     int menu = 0; // 0-Inicial, 1-Jogar, 2-Tutorial, 3-Pontuações, 4-Créditos
 
     // Debouncers
@@ -160,6 +190,7 @@ int main() {
             }
             else if (debouncerMenu.debounce(detectedSair)) {
                 cout << "Saindo...\n";
+                mixer.quitMixer();
                 cap.release();
                 destroyAllWindows();
                 return 0;
@@ -260,7 +291,7 @@ int main() {
 
             // Troca de desafio
             if (getTickCount() - ultimoTempo > intervalo) {
-                desafioAtual = gerarDesafio();
+                desafioAtual = gerarDesafio(mixer);
                 ultimoTempo = getTickCount();
                 
                 if (pontuacao > 0 && pontuacao % 5 == 0 && delay > 800) {
@@ -277,6 +308,7 @@ int main() {
             break;
     }
 
+    mixer.quitMixer();
     cap.release();
     destroyAllWindows();
     return 0;
