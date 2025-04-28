@@ -15,46 +15,50 @@ class Mixer{
 
     public:
     
+        Mixer(){}
         int setupMixer(){
             if (SDL_Init(SDL_INIT_AUDIO) < 0) {
                 std::cout << "Erro ao iniciar SDL: " << SDL_GetError() << std::endl;
-                throw 1;
+                return -1;
             }
             
             if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
                 std::cout << "Erro ao iniciar SDL_mixer: " << Mix_GetError() << std::endl;
-                throw 2;
+                return -1;
             }
+            
+            return 1;
         }
         
-        Mixer(){
-            setupMixer();    
-        }
 
-        int loadMusic(char* path){
+        int loadMusic(const char* path){
             musica = Mix_LoadMUS(path);
             if (!musica) {
                 std::cout << "Erro ao carregar a música: " << Mix_GetError() << std::endl;
                 return -1;
             }
+            return 1;
         }
-        int loadSoundEffect(char* path){
+        int loadSoundEffect(const char* path){
             soundEffect = Mix_LoadWAV(path);
             if(!soundEffect){
                 std::cout << "Erro ao carregar o efeito sonoro\n";
                 return -1;
             }
+            return 1;
         }
 
         void playMusic(){
-            Mix_PlayMusic(musica, 0); // 1 = toca uma vez (0 = infinito)    
+            Mix_PlayMusic(musica, -1); // 1 = toca uma vez (0 = infinito)    
         }
         void playSoundEffect(){
             Mix_PlayChannel(1, soundEffect, 0);
-            while(Mix_Playing(1)){
-                SDL_Delay(100);
+        }
+        void stopSoundEffect(){
+            if(Mix_Playing(1)){
+                Mix_HaltChannel(1);
             }
-            Mix_FreeChunk(soundEffect); 
+            Mix_FreeChunk(soundEffect);
         }
 
         void setVolume(int tipo, int vol){ // 1 = música; 2 = efeito sonoro

@@ -54,19 +54,19 @@ Desafio gerarDesafio(Mixer mixer) {
               (percent < 0.9) ? cores[1] : cores[2];
 
     if(dir == "Esquerda"){
-        mixer.loadSoundEffect("./musicas/direcoes/esquerda.wav");
+        mixer.loadSoundEffect("../musicas/direcoes/esquerda.wav");
         mixer.playSoundEffect();
     }
     else if(dir == "Direita"){
-        mixer.loadSoundEffect("./musicas/direcoes/direita.wav");
+        mixer.loadSoundEffect("../musicas/direcoes/direita.wav");
         mixer.playSoundEffect();
     }
     else if(dir == "Cima"){
-        mixer.loadSoundEffect("./musicas/direcoes/cima.wav");
+        mixer.loadSoundEffect("../musicas/direcoes/cima.wav");
         mixer.playSoundEffect();
     }
     else if(dir == "Baixo"){
-        mixer.loadSoundEffect("./musicas/direcoes/baixo.wav");
+        mixer.loadSoundEffect("../musicas/direcoes/baixo.wav");
         mixer.playSoundEffect();
     }
 
@@ -74,15 +74,13 @@ Desafio gerarDesafio(Mixer mixer) {
 }
 
 int main() {
-    try{
-        Mixer mixer;
-    }
-    catch(int e){
-        cout << "Programa encerrando...";
+    Mixer mixer;
+    if(mixer.setupMixer() < 0){
+        std::cout << "Programa encerrando...\n";
         return -1;
     }
 
-    mixer.loadMusic("./musicas/subway_surfers.mp3");
+    mixer.loadMusic("../musicas/subway_surfers.mp3");
     mixer.playMusic();
     mixer.setVolume(1, 20); // Volume = 20%
 
@@ -291,6 +289,7 @@ int main() {
 
             // Troca de desafio
             if (getTickCount() - ultimoTempo > intervalo) {
+                mixer.stopSoundEffect();
                 desafioAtual = gerarDesafio(mixer);
                 ultimoTempo = getTickCount();
                 
@@ -307,7 +306,7 @@ int main() {
         if (waitKey(10) == 27 || waitKey(10) == 'q')
             break;
     }
-
+    
     mixer.quitMixer();
     cap.release();
     destroyAllWindows();
