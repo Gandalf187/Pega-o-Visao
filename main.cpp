@@ -137,8 +137,8 @@ int main() {
         // Configurações da janela
         flip(frame, frame, 1);
         int width = 720, height = 540;
-        namedWindow("Pega o Visao", WINDOW_NORMAL);
-        resizeWindow("Pega o Visao", width, height);
+        namedWindow("O Mestre", WINDOW_NORMAL);
+        resizeWindow("O Mestre", width, height);
         int x = (int)cap.get(CAP_PROP_FRAME_WIDTH);
         int y = (int)cap.get(CAP_PROP_FRAME_HEIGHT);
 
@@ -280,7 +280,6 @@ int main() {
             }
         }
         else if(menu == 4){
-            cout << "entrei aqui oh otariano\n";
             if(debouncerMenu.debounce(detectedVoltar)){
                 menu = 0;
                 cout << "Menu\n";
@@ -380,7 +379,7 @@ int main() {
             putText(frame, "Professor Orientador: Derzu Omaia", Point(x * 0.1, y * 0.8),
                     FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 2);
         }
-        imshow("Pega o Visao", frame);
+        imshow("O Mestre", frame);
         if (waitKey(10) == 27 || waitKey(10) == 'q')
             break;
     }
