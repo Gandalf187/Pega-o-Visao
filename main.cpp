@@ -74,6 +74,7 @@ Desafio gerarDesafio(Mixer mixer) {
 }
 
 int main() {
+    std::srand(std::time(nullptr));
     Mixer mixer;
     if(mixer.setupMixer() < 0){
         std::cout << "Programa encerrando...\n";
@@ -90,9 +91,19 @@ int main() {
         return -1;
     }
 
-    Mat creditosImg1 = imread("../eu_thiago.png", IMREAD_UNCHANGED);
+    Mat creditosImg1 = imread("../img/thiago.png", IMREAD_COLOR);
     if(creditosImg1.empty()){
         cout << "Erro ao carregar a imagem 1 dos créditos\n";
+        return -1;
+    }
+    Mat creditosImg2 = imread("../img/gabriel.jpg", IMREAD_COLOR);
+    if (creditosImg2.empty()){
+        cout << "Erro ao carregar a imagem 2 dos créditos\n";
+        return -1;
+    }
+    Mat creditosImg3 = imread("../img/joao_pedro.jpg", IMREAD_COLOR);
+    if (creditosImg3.empty()){
+        cout << "Erro ao carregar a imagem 3 dos créditos\n";
         return -1;
     }
 
@@ -112,8 +123,9 @@ int main() {
     auto tempoInicial = steady_clock::now();
 
     // Debouncers
+    int timeDebounce = 500;
     Debouncer debouncerMenu(500);
-    Debouncer debouncerTop(300), debouncerBottom(300), debouncerLeft(300), debouncerRight(300);
+    Debouncer debouncerTop(timeDebounce), debouncerBottom(timeDebounce), debouncerLeft(timeDebounce), debouncerRight(timeDebounce);
 
     Mat frame, hsv, mask;
     while (true) {
@@ -125,8 +137,8 @@ int main() {
         // Configurações da janela
         flip(frame, frame, 1);
         int width = 720, height = 540;
-        namedWindow("Deteccao Full Body", WINDOW_NORMAL);
-        resizeWindow("Deteccao Full Body", width, height);
+        namedWindow("Pega o Visao", WINDOW_NORMAL);
+        resizeWindow("Pega o Visao", width, height);
         int x = (int)cap.get(CAP_PROP_FRAME_WIDTH);
         int y = (int)cap.get(CAP_PROP_FRAME_HEIGHT);
 
@@ -146,15 +158,13 @@ int main() {
         Rect pontuacoes(Point(x * 0.4, 0), Point(x * 0.6, y * 0.2));
         Rect creditos(Point(x * 0.6, 0), Point(x * 0.8, y * 0.2));
         Rect sair(Point(x * 0.8, 0), Point(x, y * 0.2));
+        Rect voltar(Point(x * 0.85, y * 0.80), Point(x, y));
 
         // Áreas do jogo
         Rect top(Point(0, 0), Point(x, y * 0.15));
         Rect bottom(Point(0, y * 0.85), Point(x, y));
-        Rect left(Point(0, y * 0.15), Point(x * 0.15, y * 0.85));
-        Rect right(Point(x * 0.85, y * 0.15), Point(x, y * 0.85));
-
-        // Área dos créditos
-        Rect voltar(Point(x * 0.85, y * 0.85), Point(x, y));
+        Rect left(Point(0, y * 0.15), Point(x * 0.10, y * 0.85));
+        Rect right(Point(x * 0.9, y * 0.15), Point(x, y * 0.85));
 
         // Variáveis de detecção
         bool detectedJogar = false, detectedTutorial = false;
@@ -269,6 +279,14 @@ int main() {
                 }
             }
         }
+        else if(menu == 4){
+            cout << "entrei aqui oh otariano\n";
+            if(debouncerMenu.debounce(detectedVoltar)){
+                menu = 0;
+                cout << "Menu\n";
+                detectedVoltar = false;
+            }
+        }
 
         // Desenho da interface
         if (menu == 0) {
@@ -282,7 +300,7 @@ int main() {
                    FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
             
             rectangle(frame, pontuacoes, Scalar(0, 0, 0), 2);
-            putText(frame, "Pontuacoes", Point(pontuacoes.x + 10, pontuacoes.y + 30), 
+            putText(frame, "Pontuacoes", Point(pontuacoes.x + 5, pontuacoes.y + 30), 
                    FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
             
             rectangle(frame, creditos, Scalar(0, 0, 0), 2);
@@ -327,7 +345,7 @@ int main() {
                     FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
 
                 // Troca de desafio
-                if (getTickCount() - ultimoTempo > intervalo) {
+                if (getTickCount() - ultimoTempo > intervalo){
                     mixer.stopSoundEffect();
                     desafioAtual = gerarDesafio(mixer);
                     ultimoTempo = getTickCount();
@@ -341,15 +359,28 @@ int main() {
                 }
             }
         }
-
         else if(menu == 4){
-            rectangle(frame, voltar, Scalar(0, 0, 0), 2);
             putText(frame, "Creditos", Point(x * 0.1, y * 0.1),
                     FONT_HERSHEY_SIMPLEX, 1, Scalar(0,0,0), 4);
-            resize(creditosImg1, creditosImg1, Size(150, 150));
+
+            rectangle(frame, voltar, Scalar(0, 0, 0), 2);
+            putText(frame, "Voltar", Point(voltar.x + 20, voltar.y + (voltar.height * 0.6)),
+                    FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
+
+            // Colocar imagens na tela
             creditosImg1.copyTo(frame(Rect(x * 0.1, y * 0.2, creditosImg1.cols, creditosImg1.rows)));
+            creditosImg2.copyTo(frame(Rect(x * 0.1 + 170, y * 0.2, creditosImg2.cols, creditosImg2.rows)));
+            creditosImg3.copyTo(frame(Rect(x * 0.1 + 350, y * 0.2, creditosImg3.cols, creditosImg3.rows)));
+            putText(frame, "Thiago Sergio", Point(x * 0.1, y * 0.2 + 170),
+                    FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 2);
+            putText(frame, "Gabriel Lorenzo", Point(x * 0.1 + 170, y * 0.2 + 170),
+                    FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 2);
+            putText(frame, "Joao Pedro", Point(x * 0.1 + 350, y * 0.2 + 170),
+                    FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 2);
+            putText(frame, "Professor Orientador: Derzu Omaia", Point(x * 0.1, y * 0.8),
+                    FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 2);
         }
-        imshow("Deteccao Full Body", frame);
+        imshow("Pega o Visao", frame);
         if (waitKey(10) == 27 || waitKey(10) == 'q')
             break;
     }
