@@ -90,6 +90,12 @@ int main() {
         return -1;
     }
 
+    Mat creditosImg1 = imread("../eu_thiago.png", IMREAD_UNCHANGED);
+    if(creditosImg1.empty()){
+        cout << "Erro ao carregar a imagem 1 dos créditos\n";
+        return -1;
+    }
+
     // Variáveis do jogo
     int pontuacao = 0;
     int dificuldade = 1;
@@ -99,6 +105,11 @@ int main() {
     int64 intervalo = delay * getTickFrequency() / 1000;
     Desafio desafioAtual = gerarDesafio(mixer);
     int menu = 0; // 0-Inicial, 1-Jogar, 2-Tutorial, 3-Pontuações, 4-Créditos
+    int contador = 4;
+    int delayContador = 1000;
+    double delaySegundos = 1.0;
+
+    auto tempoInicial = steady_clock::now();
 
     // Debouncers
     Debouncer debouncerMenu(500);
@@ -108,6 +119,8 @@ int main() {
     while (true) {
         cap >> frame;
         if (frame.empty()) break;
+
+        auto tempoAtual = steady_clock::now();
 
         // Configurações da janela
         flip(frame, frame, 1);
@@ -137,13 +150,17 @@ int main() {
         // Áreas do jogo
         Rect top(Point(0, 0), Point(x, y * 0.15));
         Rect bottom(Point(0, y * 0.85), Point(x, y));
-        Rect left(Point(0, y * 0.15), Point(x * 0.10, y * 0.85));
-        Rect right(Point(x * 0.9, y * 0.15), Point(x, y * 0.85));
+        Rect left(Point(0, y * 0.15), Point(x * 0.15, y * 0.85));
+        Rect right(Point(x * 0.85, y * 0.15), Point(x, y * 0.85));
+
+        // Área dos créditos
+        Rect voltar(Point(x * 0.85, y * 0.85), Point(x, y));
 
         // Variáveis de detecção
         bool detectedJogar = false, detectedTutorial = false;
         bool detectedPontuacoes = false, detectedCreditos = false, detectedSair = false;
         bool detectedTop = false, detectedBottom = false, detectedLeft = false, detectedRight = false;
+        bool detectedVoltar = false;
 
         // Processamento de contornos
         for (auto& contour : contours) {
@@ -165,6 +182,9 @@ int main() {
                 if ((bottom & box).area() > 0) detectedBottom = true;
                 if ((left & box).area() > 0) detectedLeft = true;
                 if ((right & box).area() > 0) detectedRight = true;
+            }
+            else if(menu == 4){
+                if ((voltar & box).area() > 0) detectedVoltar = true;
             }
         }
 
@@ -275,33 +295,60 @@ int main() {
         }
         else if (menu == 1) {
             // Jogo
-            rectangle(frame, top, Scalar(0, 0, 255), 2);
-            rectangle(frame, bottom, Scalar(0, 255, 255), 2);
-            rectangle(frame, left, Scalar(255, 0, 0), 2);
-            rectangle(frame, right, Scalar(0, 255, 0), 2);
-            
-            putText(frame, desafioAtual.direcao, Point(50, 100), 
-                   FONT_HERSHEY_SIMPLEX, 1, desafioAtual.cor, 4);
-            putText(frame, "Pontuacao: " + to_string(pontuacao), Point(50, 150), 
-                   FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
-            putText(frame, "Dificuldade: " + to_string(dificuldade), Point(50, 200), 
-                   FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
+            if(contador >= 0){
 
-            // Troca de desafio
-            if (getTickCount() - ultimoTempo > intervalo) {
-                mixer.stopSoundEffect();
-                desafioAtual = gerarDesafio(mixer);
-                ultimoTempo = getTickCount();
-                
-                if (pontuacao > 0 && pontuacao % 5 == 0 && delay > 800) {
-                    dificuldade++;
-                    delay -= 200;
-                    intervalo = delay * getTickFrequency() / 1000;
+                string texto;
+                if (contador > 0){
+                    texto = to_string(contador);
                 }
-                colisao = false;
+                else{
+                    texto = "PLAY!";
+                }
+                putText(frame, texto, Point(200, 240), FONT_HERSHEY_SIMPLEX, 4, Scalar(0, 255, 0), 4);
+
+                double tempoDecorrido = duration_cast<duration<double>>(tempoAtual - tempoInicial).count();
+
+                if (tempoDecorrido >= delaySegundos){
+                    contador--;
+                    tempoInicial = tempoAtual;
+                }
+            }
+            else{
+                rectangle(frame, top, Scalar(0, 0, 255), 2);
+                rectangle(frame, bottom, Scalar(0, 255, 255), 2);
+                rectangle(frame, left, Scalar(255, 0, 0), 2);
+                rectangle(frame, right, Scalar(0, 255, 0), 2);
+                
+                putText(frame, desafioAtual.direcao, Point(50, 100), 
+                    FONT_HERSHEY_SIMPLEX, 1, desafioAtual.cor, 4);
+                putText(frame, "Pontuacao: " + to_string(pontuacao), Point(50, 150), 
+                    FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
+                putText(frame, "Dificuldade: " + to_string(dificuldade), Point(50, 200), 
+                    FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
+
+                // Troca de desafio
+                if (getTickCount() - ultimoTempo > intervalo) {
+                    mixer.stopSoundEffect();
+                    desafioAtual = gerarDesafio(mixer);
+                    ultimoTempo = getTickCount();
+                    
+                    if (pontuacao > 0 && pontuacao % 5 == 0 && delay > 800) {
+                        dificuldade++;
+                        delay -= 200;
+                        intervalo = delay * getTickFrequency() / 1000;
+                    }
+                    colisao = false;
+                }
             }
         }
 
+        else if(menu == 4){
+            rectangle(frame, voltar, Scalar(0, 0, 0), 2);
+            putText(frame, "Creditos", Point(x * 0.1, y * 0.1),
+                    FONT_HERSHEY_SIMPLEX, 1, Scalar(0,0,0), 4);
+            resize(creditosImg1, creditosImg1, Size(150, 150));
+            creditosImg1.copyTo(frame(Rect(x * 0.1, y * 0.2, creditosImg1.cols, creditosImg1.rows)));
+        }
         imshow("Deteccao Full Body", frame);
         if (waitKey(10) == 27 || waitKey(10) == 'q')
             break;
