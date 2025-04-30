@@ -97,7 +97,7 @@ void bubbleSort(vector<Jogador>& jogadores){
     Jogador temp;
     for(int i = tam - 1; i >= 0; i--){
         for(int j = tam - 1; j >= 0; j--){
-            if(jogadores[i].getPontuacao() > jogadores[j].getPontuacao()){
+            if(jogadores[i].getPontuacao() < jogadores[j].getPontuacao()){
                 temp = jogadores[i];
                 jogadores[i] = jogadores[j];
                 jogadores[j] = temp;
@@ -108,14 +108,18 @@ void bubbleSort(vector<Jogador>& jogadores){
 
 void salvarDados(vector<Jogador>& jogadores){
     fstream arq;
-    arq.open("dados.txt", ios::out | ios::trunc);
+    arq.open("dados.txt", fstream::out | fstream::trunc);
     if(!arq.is_open()){
         cout << "Erro ao salvar dados no arquivo\n";
         return;
     }
-    for(Jogador& jogador : jogadores){
-        arq << jogador.getNome() << "\n";
-        arq << jogador.getPontuacao() << "\n";
+    int tam = jogadores.size();
+    if(tam > 10){
+        tam = 10;
+    }
+    for(int i = 0; i < tam; i++){
+        arq << jogadores[i].getNome() << "\n";
+        arq << jogadores[i].getPontuacao() << "\n";
     }
     arq.close();
     cout << "Dados salvos com sucesso!\n";
@@ -123,7 +127,7 @@ void salvarDados(vector<Jogador>& jogadores){
 
 void carregarDados(vector<Jogador>& jogadores){
     fstream arq;
-    arq.open("dados.txt", ios::in);
+    arq.open("dados.txt", fstream::in);
     if(!arq.is_open()){
         cout << "Erro ao carregar o arquivo\n";
         return;
@@ -132,6 +136,7 @@ void carregarDados(vector<Jogador>& jogadores){
     int pontuacao;
     while(getline(arq, nome)){
         arq >> pontuacao;
+        arq.ignore();
         jogadores.push_back(Jogador(nome, pontuacao));
     }
     arq.close();
@@ -187,6 +192,7 @@ int main() {
     }
 
     // Variáveis do jogo
+    int ultimaPontuacao = 0;
     int pontuacao = 0;
     int dificuldade = 1;
     bool colisao = false;
@@ -211,6 +217,9 @@ int main() {
     // Início do programa
     vector<Jogador> jogadoresTodos;
     carregarDados(jogadoresTodos);
+    for(Jogador& jogador : jogadoresTodos){
+        cout << jogador.getNome() << ": " << jogador.getPontuacao() << "\n";
+    }
 
     string nomeJogador;
     int corEscolhida;
@@ -221,7 +230,7 @@ int main() {
     getline(cin, nomeJogador);
     do{
         cout << "Qual cor voce escolhe:\n";
-        cout << "[1] Amarelo\n[2] Azul\n[3] Verde\n[4] Vermelho\nSua escolha: ";
+        cout << "[1] Amarelo (recomendado)\n[2] Azul (recomendado)\n[3] Verde\n[4] Vermelho\nSua escolha: ";
         cin >> corEscolhida;
         if(corEscolhida < 0 || corEscolhida > 4){
             cout << "Opcao invalida!\n";
@@ -428,6 +437,7 @@ int main() {
                 contador = 4;
                 cronometroJogo = 60;
                 pontuacao = 0;
+                ultimaPontuacao = 0;
                 dificuldade = 1;
                 delay = 2000;
                 menu = 0;
@@ -487,7 +497,7 @@ int main() {
                 rectangle(frame, left, Scalar(255, 0, 0), 2);
                 rectangle(frame, right, Scalar(0, 255, 0), 2);
 
-                putText(frame, (cronometroJogo == 60) ? "1:00": (cronometroJogo < 10) ? "0:0" + to_string(cronometroJogo) : "0:" + to_string(cronometroJogo), Point(x * 0.8 , y * 0.2),
+                putText(frame, (cronometroJogo >= 60) ? (cronometroJogo >= 70) ? "1:" + to_string(cronometroJogo - 60)  : "1:0" + to_string(cronometroJogo - 60): (cronometroJogo < 10) ? "0:0" + to_string(cronometroJogo) : "0:" + to_string(cronometroJogo), Point(x * 0.8 , y * 0.2),
                     FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
                 putText(frame, desafioAtual.direcao, Point(50, 100), 
                     FONT_HERSHEY_SIMPLEX, 1, desafioAtual.cor, 4);
@@ -504,11 +514,11 @@ int main() {
                     desafioAtual = gerarDesafio(mixer);
                     ultimoTempo = agora;
                     
-                    
-                    if (pontuacao > 0 && pontuacao % 5 == 0 && delay > 800) {
+                    if (pontuacao > 0 && pontuacao % 5 == 0 && delay > 800 && ultimaPontuacao % 5 != 0 ) {
                         dificuldade++;
                         delay -= 200;
                     }
+                    ultimaPontuacao = pontuacao;
                     colisao = false;
                 }
                 agora = high_resolution_clock::now();
@@ -519,6 +529,7 @@ int main() {
 
                     if(cronometroJogo < 0){
                         jogadoresTodos.push_back(Jogador(nomeJogador, pontuacao));
+                        bubbleSort(jogadoresTodos);
                         cout << "tamanho: " << jogadoresTodos.size() << endl;
                         cout << "Jogador: " << nomeJogador << "\nPontuacao: " << pontuacao << "\n";
                         cout << "Fim de jogo!\n";
@@ -575,7 +586,7 @@ int main() {
                     FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
             int tam = jogadoresTodos.size();
             for(int i = 0; i < tam; i++){
-                putText(frame, to_string(i+1) + ". " + jogadoresTodos[i].getNome() + " - " + to_string(jogadoresTodos[i].getPontuacao()) + " pts", Point(x * 0.05, y * (0.2 + (7 * i))),
+                putText(frame, to_string(i+1) + ". " + jogadoresTodos[i].getNome() + " - " + to_string(jogadoresTodos[i].getPontuacao()) + " pts", Point(x * 0.05, y * (0.2 + (0.07 * i))),
                     FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
             }
         }
