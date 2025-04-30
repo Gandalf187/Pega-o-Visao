@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <opencv2/opencv.hpp>
 #include <chrono>
@@ -91,7 +92,55 @@ Desafio gerarDesafio(Mixer mixer) {
     return Desafio(dir, cor.first, cor.second);
 }
 
-void sairDoPrograma(Mixer& mixer, VideoCapture& cap){
+void bubbleSort(vector<Jogador>& jogadores){
+    int tam = jogadores.size();
+    Jogador temp;
+    for(int i = tam - 1; i >= 0; i--){
+        for(int j = tam - 1; j >= 0; j--){
+            if(jogadores[i].getPontuacao() > jogadores[j].getPontuacao()){
+                temp = jogadores[i];
+                jogadores[i] = jogadores[j];
+                jogadores[j] = temp;
+            }
+        }
+    }
+}
+
+void salvarDados(vector<Jogador>& jogadores){
+    fstream arq;
+    arq.open("dados.txt", ios::out | ios::trunc);
+    if(!arq.is_open()){
+        cout << "Erro ao salvar dados no arquivo\n";
+        return;
+    }
+    for(Jogador& jogador : jogadores){
+        arq << jogador.getNome() << "\n";
+        arq << jogador.getPontuacao() << "\n";
+    }
+    arq.close();
+    cout << "Dados salvos com sucesso!\n";
+}
+
+void carregarDados(vector<Jogador>& jogadores){
+    fstream arq;
+    arq.open("dados.txt", ios::in);
+    if(!arq.is_open()){
+        cout << "Erro ao carregar o arquivo\n";
+        return;
+    }
+    string nome;
+    int pontuacao;
+    while(getline(arq, nome)){
+        arq >> pontuacao;
+        jogadores.push_back(Jogador(nome, pontuacao));
+    }
+    arq.close();
+    cout << "Dados carregados com sucesso!\n";
+}
+
+void sairDoPrograma(Mixer& mixer, VideoCapture& cap, vector<Jogador>& jogadores){
+    bubbleSort(jogadores);
+    salvarDados(jogadores);
     cout << "Saindo...\n";
     mixer.quitMixer();
     cap.release();
@@ -161,6 +210,7 @@ int main() {
 
     // Início do programa
     vector<Jogador> jogadoresTodos;
+    carregarDados(jogadoresTodos);
 
     string nomeJogador;
     int corEscolhida;
@@ -288,7 +338,7 @@ int main() {
                 cout << "Menu Créditos\n";
             }
             else if (debouncerMenu.debounce(detectedSair)) {
-                sairDoPrograma(mixer, cap);
+                sairDoPrograma(mixer, cap, jogadoresTodos);
                 return 0;
             }
         }
@@ -370,7 +420,7 @@ int main() {
         }
         else if(menu == 5){
             if(debouncerMenu.debounce(detectedSairPrograma)){
-                sairDoPrograma(mixer, cap);
+                sairDoPrograma(mixer, cap, jogadoresTodos);
                 return 0;
             }
             if(debouncerMenu.debounce(detectedReiniciar)){
@@ -580,6 +630,6 @@ int main() {
             break;
     }
 
-    sairDoPrograma(mixer, cap);
+    sairDoPrograma(mixer, cap, jogadoresTodos);
     return 0;
 }
