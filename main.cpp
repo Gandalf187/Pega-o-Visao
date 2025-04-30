@@ -91,6 +91,13 @@ Desafio gerarDesafio(Mixer mixer) {
     return Desafio(dir, cor.first, cor.second);
 }
 
+void sairDoPrograma(Mixer& mixer, VideoCapture& cap){
+    cout << "Saindo...\n";
+    mixer.quitMixer();
+    cap.release();
+    destroyAllWindows();
+}
+
 int main() {
     std::srand(std::time(nullptr));
     Mixer mixer;
@@ -124,6 +131,11 @@ int main() {
         cout << "Erro ao carregar a imagem 3 dos créditos\n";
         return -1;
     }
+    Mat oMestreLogo = imread("../img/o_mestre_logo.png", IMREAD_COLOR);
+    if(oMestreLogo.empty()){
+        cout << "Erro ao carregar a logo do jogo\n";
+        return -1;
+    }
 
     // Variáveis do jogo
     int pontuacao = 0;
@@ -138,7 +150,7 @@ int main() {
     int menu = 0; // 0-Inicial, 1-Jogar, 2-Tutorial, 3-Pontuações, 4-Créditos; (EXTRA)5-Menu pós-jogo
     int contador = 4;
     double delaySegundos = 1.0;
-    int cronometroJogo =  30;
+    int cronometroJogo = 60;
 
     auto tempoInicial = steady_clock::now();
 
@@ -164,7 +176,7 @@ int main() {
         if(corEscolhida < 0 || corEscolhida > 4){
             cout << "Opcao invalida!\n";
         }
-    }while(corEscolhida < 0 || corEscolhida > 4);
+    } while(corEscolhida < 0 || corEscolhida > 4);
 
     Mat frame, hsv, mask;
     while (true) {
@@ -212,6 +224,8 @@ int main() {
         Rect creditos(Point(x * 0.6, 0), Point(x * 0.8, y * 0.2));
         Rect sair(Point(x * 0.8, 0), Point(x, y * 0.2));
         Rect voltar(Point(x * 0.85, y * 0.80), Point(x, y));
+        Rect reiniciar(Point(0, y * 0.8), Point(x * 0.15, y));
+        Rect sairPrograma(Point(x * 0.85, y * 0.80), Point(x, y));
 
         // Áreas do jogo
         Rect top(Point(0, 0), Point(x, y * 0.15));
@@ -223,7 +237,7 @@ int main() {
         bool detectedJogar = false, detectedTutorial = false;
         bool detectedPontuacoes = false, detectedCreditos = false, detectedSair = false;
         bool detectedTop = false, detectedBottom = false, detectedLeft = false, detectedRight = false;
-        bool detectedVoltar = false;
+        bool detectedVoltar = false, detectedReiniciar = false, detectedSairPrograma = false;
 
         // Processamento de contornos
         for (auto& contour : contours) {
@@ -246,11 +260,12 @@ int main() {
                 if ((left & box).area() > 0) detectedLeft = true;
                 if ((right & box).area() > 0) detectedRight = true;
             }
-            else if(menu == 2){
+            else if(menu == 2 || menu == 3 || menu == 4){
                 if ((voltar & box).area() > 0) detectedVoltar = true;
             }
-            else if(menu == 4){
-                if ((voltar & box).area() > 0) detectedVoltar = true;
+            else if(menu == 5){
+                if ((sairPrograma & box).area() > 0) detectedSairPrograma = true;
+                if ((reiniciar & box).area() > 0) detectedReiniciar = true;
             }
         }
 
@@ -273,10 +288,7 @@ int main() {
                 cout << "Menu Créditos\n";
             }
             else if (debouncerMenu.debounce(detectedSair)) {
-                cout << "Saindo...\n";
-                mixer.quitMixer();
-                cap.release();
-                destroyAllWindows();
+                sairDoPrograma(mixer, cap);
                 return 0;
             }
         }
@@ -342,6 +354,13 @@ int main() {
                 detectedVoltar = false;
             }
         }
+        else if(menu == 3){
+            if (debouncerMenu.debounce(detectedVoltar)){
+                menu = 0;
+                cout << "Menu Principal\n";
+                detectedVoltar = false;
+            }
+        }
         else if(menu == 4){
             if(debouncerMenu.debounce(detectedVoltar)){
                 menu = 0;
@@ -349,12 +368,28 @@ int main() {
                 detectedVoltar = false;
             }
         }
+        else if(menu == 5){
+            if(debouncerMenu.debounce(detectedSairPrograma)){
+                sairDoPrograma(mixer, cap);
+                return 0;
+            }
+            if(debouncerMenu.debounce(detectedReiniciar)){
+                cout << "Reiniciando...\n";
+                contador = 4;
+                cronometroJogo = 60;
+                pontuacao = 0;
+                dificuldade = 1;
+                delay = 2000;
+                menu = 0;
+                detectedReiniciar = false;
+            }
+        }
+
 
         // Desenho da interface
         if (menu == 0) {
             // Menu principal
-            putText(frame, "O Mestre", Point(x * 0.5, y * 0.35),
-                    FONT_HERSHEY_COMPLEX, 2, Scalar(0, 0, 0), 2);
+            oMestreLogo.copyTo(frame(Rect(x * 0.75, y * 0.25, oMestreLogo.cols, oMestreLogo.rows)));
 
             rectangle(frame, jogar, Scalar(0, 0, 0), 2);
             putText(frame, "Jogar", Point(jogar.x + 20, jogar.y + 30), 
@@ -397,77 +432,85 @@ int main() {
                 }
             }
             else{
-                // double tempoQuePassou = duration_cast<duration<double>>(tempoAtual - tempoInicial).count();
-                // cout << "passei do decorrido\n";
-                // if (getTickCount() - ultimoTempo > 1/getTickFrequency()){
-                //     cronometroJogo--;
-                //     tempoInicial = tempoAtual;
-                //     cout << "passei do atual\n";
-                // }
-                // if(cronometroJogo == 0){
-                //     jogadoresTodos.push_back(Jogador(nomeJogador, pontuacao));
-                //     cout << "Fim de jogo!\n";
-                //     menu = 5;
-                // }
-                // else{
-                    cout << "PASSEI POR DENTO!\n";
-                    rectangle(frame, top, Scalar(0, 0, 255), 2);
-                    rectangle(frame, bottom, Scalar(0, 255, 255), 2);
-                    rectangle(frame, left, Scalar(255, 0, 0), 2);
-                    rectangle(frame, right, Scalar(0, 255, 0), 2);
+                rectangle(frame, top, Scalar(0, 0, 255), 2);
+                rectangle(frame, bottom, Scalar(0, 255, 255), 2);
+                rectangle(frame, left, Scalar(255, 0, 0), 2);
+                rectangle(frame, right, Scalar(0, 255, 0), 2);
 
-                    cout << "passei dos retangulos\n";
-                    putText(frame, (cronometroJogo == 60) ? "1:00": (cronometroJogo < 10) ? "0:0" + to_string(cronometroJogo) : "0:" + to_string(cronometroJogo), Point(x * 0.8 , y * 0.2),
-                        FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
-                    cout << "tudo certo ate agora\n";
-                    putText(frame, desafioAtual.direcao, Point(50, 100), 
-                        FONT_HERSHEY_SIMPLEX, 1, desafioAtual.cor, 4);
-                    putText(frame, "Pontuacao: " + to_string(pontuacao), Point(50, 150), 
-                        FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
-                    putText(frame, "Dificuldade: " + to_string(dificuldade), Point(50, 200), 
-                        FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
+                putText(frame, (cronometroJogo == 60) ? "1:00": (cronometroJogo < 10) ? "0:0" + to_string(cronometroJogo) : "0:" + to_string(cronometroJogo), Point(x * 0.8 , y * 0.2),
+                    FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
+                putText(frame, desafioAtual.direcao, Point(50, 100), 
+                    FONT_HERSHEY_SIMPLEX, 1, desafioAtual.cor, 4);
+                putText(frame, "Pontuacao: " + to_string(pontuacao), Point(50, 150), 
+                    FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
+                putText(frame, "Dificuldade: " + to_string(dificuldade), Point(50, 200), 
+                    FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 255, 255), 2);
 
-                    cout << "ok!\n";
-                    // Troca de desafio
-                    high_resolution_clock::time_point agora = high_resolution_clock::now();
-                    auto intervalo = duration_cast<milliseconds>(agora - ultimoTempo).count();
-                    if (intervalo > delay){
-                        cout << "aqui dá BO?\n";
-                        // mixer.stopSoundEffect();
-                        cout << "nop\n";
-                        desafioAtual = gerarDesafio(mixer);
-                        ultimoTempo = agora;
-                        
-                        
-                        if (pontuacao > 0 && pontuacao % 5 == 0 && delay > 800) {
-                            dificuldade++;
-                            delay -= 200;
-                        }
-                        colisao = false;
+                // Troca de desafio
+                high_resolution_clock::time_point agora = high_resolution_clock::now();
+                auto intervalo = duration_cast<milliseconds>(agora - ultimoTempo).count();
+                if (intervalo > delay){
+                    // mixer.stopSoundEffect();
+                    desafioAtual = gerarDesafio(mixer);
+                    ultimoTempo = agora;
+                    
+                    
+                    if (pontuacao > 0 && pontuacao % 5 == 0 && delay > 800) {
+                        dificuldade++;
+                        delay -= 200;
                     }
-                    cout << "Cheguei ate aqui!\n";
-                    agora = high_resolution_clock::now();
-                    auto intervaloCrono = duration_cast<milliseconds>(agora - ultimoTempoCrono).count();
-                    if (intervaloCrono > delayCrono){
-                        cronometroJogo--;
-                        if(cronometroJogo < 0){
-                            jogadoresTodos.push_back(Jogador(nomeJogador, pontuacao));
-                            cout << "Fim de jogo!\n";
-                            menu = 5;
-                            continue;
-                        }
-                        ultimoTempoCrono = agora;
-                        cout << "passei do atual\n";
-                    }
+                    colisao = false;
                 }
-                // }
+                agora = high_resolution_clock::now();
+                auto intervaloCrono = duration_cast<milliseconds>(agora - ultimoTempoCrono).count();
+
+                if (intervaloCrono > delayCrono){
+                    cronometroJogo--;
+
+                    if(cronometroJogo < 0){
+                        jogadoresTodos.push_back(Jogador(nomeJogador, pontuacao));
+                        cout << "tamanho: " << jogadoresTodos.size() << endl;
+                        cout << "Jogador: " << nomeJogador << "\nPontuacao: " << pontuacao << "\n";
+                        cout << "Fim de jogo!\n";
+                        menu = 5;
+                        continue;
+                    }
+                    
+                    ultimoTempoCrono = agora;
+                }
+            }
         }
         else if(menu == 2){
+            float escala = 0.6;
             putText(frame, "O Mestre", Point(x * 0.4, y * 0.1),
                     FONT_HERSHEY_TRIPLEX, 1, Scalar(0, 0, 0), 4);
 
             putText(frame, "Instrucoes:", Point(x * 0.05, y * 0.2),
                     FONT_HERSHEY_DUPLEX, 0.9, Scalar(0, 0, 0), 3);
+            putText(frame, "Leve o objeto ate a direcao indicada!", Point(x * 0.05, y * 0.27),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 0, 0), 2);
+            putText(frame, "Entretanto...", Point(x * 0.05, y * 0.34),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 0, 0), 2);
+            putText(frame, "Se a palavra estiver... ", Point(x * 0.05, y * 0.42),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 0, 0), 2);
+            putText(frame, "VERDE", Point((x * 0.05) + 225, y * 0.42),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 255, 0), 3);
+            putText(frame, "siga sem medo para a direcao indicada!", Point(x * 0.05, y * 0.49),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 0, 0), 2);
+            putText(frame, "Se a palavra estiver... ", Point(x * 0.05, y * 0.56),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 0, 0), 2);
+            putText(frame, "VERMELHA", Point((x * 0.05) + 225, y * 0.56),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 0, 255), 3);
+            putText(frame, "va para a direcao OPOSTA!", Point(x * 0.05, y * 0.63),
+                    FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
+            putText(frame, "Se a palavra estiver... ", Point(x * 0.05, y * 0.70),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 0, 0), 2);
+            putText(frame, "PRETA", Point((x * 0.05) + 225, y * 0.70),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 0, 0), 3);
+            putText(frame, "PARE! Apenas nao se mova.", Point(x * 0.05, y * 0.77),
+                    FONT_HERSHEY_SIMPLEX, escala, Scalar(0, 0, 0), 2);
+            putText(frame, "DIVIRTA-SE! :D", Point(x * 0.3, y * 0.9),
+                    FONT_HERSHEY_COMPLEX, 1, Scalar(0, 200, 255), 3);
 
             rectangle(frame, voltar, Scalar(0, 0, 0), 2);
             putText(frame, "Voltar", Point(voltar.x + 20, voltar.y + (voltar.height * 0.6)),
@@ -476,6 +519,15 @@ int main() {
         else if(menu == 3){
             putText(frame, "Pontuacoes", Point(x * 0.4, y * 0.1),
                     FONT_HERSHEY_TRIPLEX, 1, Scalar(0, 0, 0), 4);
+
+            rectangle(frame, voltar, Scalar(0, 0, 0), 2);
+            putText(frame, "Voltar", Point(voltar.x + 20, voltar.y + (voltar.height * 0.6)),
+                    FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
+            int tam = jogadoresTodos.size();
+            for(int i = 0; i < tam; i++){
+                putText(frame, to_string(i+1) + ". " + jogadoresTodos[i].getNome() + " - " + to_string(jogadoresTodos[i].getPontuacao()) + " pts", Point(x * 0.05, y * (0.2 + (7 * i))),
+                    FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
+            }
         }
         else if(menu == 4){
             putText(frame, "Creditos", Point(x * 0.1, y * 0.1),
@@ -498,13 +550,36 @@ int main() {
             putText(frame, "Professor Orientador: Derzu Omaia", Point(x * 0.1, y * 0.8),
                     FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 0), 2);
         }
+        else if(menu == 5){
+            if(pontuacao < 10){
+                putText(frame, "Iiihh, precisa melhorar hein", Point(x * 0.1, y * 0.2),
+                    FONT_HERSHEY_COMPLEX, 1, Scalar(0, 255, 255), 2);
+            }
+            else if(pontuacao < 15){
+                putText(frame, "Boa! Foi na media", Point(x * 0.1, y * 0.2),
+                    FONT_HERSHEY_COMPLEX, 1, Scalar(0, 255, 255), 2);
+            }
+            else{
+                putText(frame, "INCRIVEL, JOGA MUITO!", Point(x * 0.1, y * 0.2),
+                    FONT_HERSHEY_COMPLEX, 1, Scalar(0, 255, 255), 2);
+            }
+            putText(frame, "Sua pontuacao: " + to_string(pontuacao), Point(x * 0.1, y * 0.35),
+                    FONT_HERSHEY_COMPLEX, 0.8, Scalar(0, 0, 0), 2);
+
+            rectangle(frame, reiniciar, Scalar(0, 0, 0), 2);
+            putText(frame, "Reiniciar", Point(reiniciar.x + 10, reiniciar.y + (reiniciar.height * 0.6)),
+                    FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
+
+            rectangle(frame, sairPrograma, Scalar(0, 0, 0), 2);
+            putText(frame, "Sair", Point(sairPrograma.x + 20, sairPrograma.y + (sairPrograma.height * 0.6)),
+                    FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 0, 0), 2);
+        }
+
         imshow("O Mestre", frame);
         if (waitKey(10) == 27 || waitKey(10) == 'q')
             break;
     }
-    
-    mixer.quitMixer();
-    cap.release();
-    destroyAllWindows();
+
+    sairDoPrograma(mixer, cap);
     return 0;
 }
